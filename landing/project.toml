@@ -1,0 +1,6 @@
+# Deploio serves this folder as a static site with Heroku's static web server.
+# Files come from public/ (the default root).
+[_]
+schema-version = "0.2"
+
+[com.heroku.static-web-server]
