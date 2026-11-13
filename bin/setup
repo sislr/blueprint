@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-time setup: gets Node if needed, installs and builds Blueprint, checks the Claude login and puts the
+# One-time setup: gets Node if needed, installs and builds Blueprint, checks Claude access and puts the
 # `blueprint` command on your PATH. Safe to run again at any time.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -32,15 +32,18 @@ step "Installing and building"
 npm install --no-fund --no-audit --loglevel=error
 npm run build --silent -- --logLevel warn
 
-step "Checking Claude login"
-if [ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ] || grep -qs '^CLAUDE_CODE_OAUTH_TOKEN=.\+' .env; then
-  echo "Using CLAUDE_CODE_OAUTH_TOKEN"
+step "Checking Claude access"
+if [ -n "${ANTHROPIC_API_KEY:-}" ] || grep -qs '^ANTHROPIC_API_KEY=.\+' .env; then
+  echo "Using ANTHROPIC_API_KEY"
+elif [ -n "${CLAUDE_CODE_USE_BEDROCK:-}${CLAUDE_CODE_USE_VERTEX:-}${CLAUDE_CODE_USE_FOUNDRY:-}" ]; then
+  echo "Using your cloud provider settings"
 elif command -v claude >/dev/null || [ -d "$HOME/.claude" ]; then
-  echo "Using your Claude Code login (not logged in yet? run 'claude' and type /login)"
+  echo "No API key set, so the agent uses your Claude Code login"
 else
-  warn "No Claude login found. Blueprint runs on your Claude subscription. Either:"
-  echo "  • install Claude Code and log in: https://claude.com/claude-code"
-  echo "  • or run 'npx @anthropic-ai/claude-code setup-token' and put the token in .env (see .env.example)"
+  [ -f .env ] || cp .env.example .env
+  warn "No API key yet. Blueprint runs the agent on the Claude API:"
+  echo "  • create a key at https://platform.claude.com/settings/keys"
+  echo "  • put it in $ROOT/.env as ANTHROPIC_API_KEY=..."
 fi
 
 step "Installing the blueprint command"
@@ -60,20 +63,14 @@ for dir in "$HOME/.local/bin" "$HOME/bin" /opt/homebrew/bin /usr/local/bin; do
   fi
 done
 if [ -z "$installed" ]; then
-  # Nothing suitable on PATH: use ~/.local/bin and add it to the shell's startup file.
+  # Nothing suitable on PATH. Put it in ~/.local/bin and tell the user how to add that folder;
+  # setup never edits shell startup files.
   mkdir -p "$HOME/.local/bin"
   ln -sf "$target" "$HOME/.local/bin/blueprint" || fail "Couldn't create $HOME/.local/bin/blueprint. Run $target directly instead."
   installed="$HOME/.local/bin/blueprint"
-  rc="$HOME/.$(basename "${SHELL:-bash}")rc"
-  line='export PATH="$HOME/.local/bin:$PATH"'
-  if grep -qsF "$line" "$rc"; then
-    :
-  elif ask "Add ~/.local/bin to your PATH in $rc?"; then
-    printf '\n# Added by blueprint setup\n%s\n' "$line" >>"$rc"
-  else
-    warn "Add ~/.local/bin to your PATH to use the blueprint command."
-  fi
-  warn "Open a new terminal (or run: source $rc) to use the blueprint command."
+  warn "$HOME/.local/bin isn't on your PATH. Add this line to your shell's startup file (e.g. ~/.zshrc):"
+  echo '    export PATH="$HOME/.local/bin:$PATH"'
+  echo "  Until then, run $installed directly."
 fi
 hash -r
 echo "blueprint → $installed"

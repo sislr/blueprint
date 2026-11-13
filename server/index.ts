@@ -5,7 +5,7 @@ import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { createNodeWebSocket } from "@hono/node-ws";
 import type { WSContext } from "hono/ws";
-import { authDescription, strippedVars } from "./auth";
+import { authDescription } from "./auth";
 import { Projects, type Workspace } from "./projects";
 import { hasCode } from "./discover";
 import type { ArchitectureModel, Layout } from "../shared/model";
@@ -165,8 +165,6 @@ if (existsSync(dist)) {
 const server = serve({ fetch: app.fetch, port }, async () => {
   const { projectsDir } = projects.settings();
   console.log(`blueprint → http://localhost:${port}  (projects in ${projectsDir})`);
-  console.log(`auth: Claude subscription via ${authDescription()}`);
-  const ignored = strippedVars();
-  if (ignored.length) console.log(`      ignoring ${ignored.join(", ")} for the agent`);
+  console.log(`auth: ${authDescription()}`);
 });
 injectWebSocket(server);

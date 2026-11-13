@@ -358,7 +358,7 @@ export class AgentRunner {
       options: {
         cwd: this.store.repo,
         model: MODEL,
-        env: agentEnv(), // subscription only: API keys / other providers stripped, see auth.ts
+        env: agentEnv(), // API key, cloud provider or Claude Code login, see auth.ts
         abortController: this.abort,
         systemPrompt: { type: "preset", preset: "claude_code", append },
         settingSources: ["project"],
@@ -371,16 +371,7 @@ export class AgentRunner {
 
     for await (const msg of q) {
       if (msg.type === "system" && msg.subtype === "init") {
-        // 'none' means no API key is in use, i.e. the claude.ai OAuth subscription.
-        if (msg.apiKeySource !== "none") {
-          this.status = "error";
-          this.log(`Refusing to run: the agent would authenticate via ${msg.apiKeySource}, not your subscription.`, "error");
-          this.abort?.abort();
-          return false;
-        }
-        const info = await q.accountInfo().catch(() => undefined);
-        const plan = info?.subscriptionType ? `Claude ${info.subscriptionType}` : "Claude subscription";
-        this.log(`Using ${plan}${info?.email ? ` (${info.email})` : ""} via ${authDescription()}`, "info");
+        this.log(`Using ${authDescription()}`, "info");
       } else if (msg.type === "assistant" && !msg.parent_tool_use_id) {
         for (const block of msg.message.content) {
           if (block.type === "text" && block.text.trim()) this.log(block.text.trim(), "text");
@@ -388,7 +379,7 @@ export class AgentRunner {
         }
       } else if (msg.type === "result") {
         if (msg.subtype === "success" && !msg.is_error) {
-          this.log(`✓ Done in ${Math.round(msg.duration_ms / 1000)}s · ${msg.num_turns} turns (on your subscription)`, "info");
+          this.log(`✓ Done in ${Math.round(msg.duration_ms / 1000)}s · ${msg.num_turns} turns · $${msg.total_cost_usd.toFixed(2)}`, "info");
           return true;
         }
         this.status = "error";

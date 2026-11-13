@@ -2,6 +2,7 @@
   "name": "blueprint",
   "version": "0.1.0",
   "description": "Design the architecture, let the agent implement it",
+  "license": "MIT",
   "scripts": {
     "dev": "concurrently -k -n server,web -c blue,magenta \"tsx watch --clear-screen=false server/index.ts $TARGET_REPO\" \"vite\"",
     "build": "vite build",

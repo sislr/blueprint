@@ -37,7 +37,12 @@ After that there's nothing to rebuild by hand: `blueprint` installs and builds w
 
 | Env | Default | |
 |---|---|---|
+| `ANTHROPIC_API_KEY` | | Claude API key ([create one](https://platform.claude.com/settings/keys)) |
 | `BLUEPRINT_MODEL` | `claude-opus-5-5` | Agent model |
 | `PORT` | `4317` | Canvas port |
 | `BLUEPRINT_APP_URL` | `http://localhost:3000` | Where **Open app** looks for your app |
 | `BLUEPRINT_APP_CMD` | `bin/dev` or `npm run dev` | How **Open app** starts it |
+
+## License
+
+[MIT](LICENSE)
